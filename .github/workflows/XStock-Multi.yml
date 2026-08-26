@@ -631,12 +631,7 @@ jobs:
           • Redmi 15/Poco M7 (untested)
 
           📱 *Supported Manager:*
-          • KSU by tiann
-          • MKSU
-          • Rissu-KSU
-          • KowSU
-          • ReSukiSU (Main Root Manager)
-          • SukiSU-Ultra
+          • KernelSU Next
 
           🕐 *Build Date:* $(date '+%Y-%m-%d %H:%M:%S UTC')
           📦 *Package:* \`${{ env.ZIP_NAME }}\`
