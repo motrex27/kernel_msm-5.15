@@ -564,7 +564,7 @@ jobs:
           ║..:::::..:::......::::::..::::::.......::::......:::..::::..::║
           ║                                                     ║
           ║                     XStock Kernel                   ║
-          ║                   by @yougotme101                   ║
+          ║               by @yougotme101 & @motrex27                   ║
           ║                                                     ║
           ║              Powered by Github Actions              ║
           ║                                                     ║
@@ -576,7 +576,7 @@ jobs:
           ║     • AOSP clang-r596125                            ║
           ║     • Droidspaces Support                           ║
           ║     • Baseband-guard v1 Support                     ║
-          ║     • Vanilla & ReSukiSU (Multi Manager Support).   ║
+          ║     • Vanilla & KernelSU Next (Multi Manager Support).   ║
           ║     • Integrated with SUSFS (GKI A13-5.15)          ║
           ║     • Metamodule (Magic-Mount or Mountify) Support  ║
           ║                                                     ║
@@ -658,7 +658,7 @@ jobs:
           • Kernel: \`Linux 5.15\`
           • Android: \`13-17\`
           • Base: \`GKI & CLO\`
-          • KSU: \`ReSukiSU\`
+          • KSU: \`KernelSU Next\`
           • SUSFS: \`Enabled (GKI A13-5.15)\`
           • LTO: \`Full\`
           • Optimization: \`-O2\`
