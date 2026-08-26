@@ -347,9 +347,10 @@ jobs:
           rm -rf ./KernelSU ./drivers/kernelsu
 
           echo "📦 Installing KSU..."
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s stable && [ -d "KernelSU-Next" ] && mv KernelSU-Next KernelSU
           
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s stable && [ -d "KernelSU-Next" ] && mv KernelSU-Next KernelSU ; ln -sf $(pwd)/KernelSU drivers/kernelsu
           
+        
           echo "✔ KSU installed successfully"
           
           # Clone SUSFS4KSU for kernel patches only (not KSU integration)
