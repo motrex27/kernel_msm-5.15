@@ -348,7 +348,8 @@ jobs:
 
           echo "📦 Installing KSU..."
           
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s stable && [ -d "KernelSU-Next" ] && mv KernelSU-Next KernelSU ; ln -sf $(pwd)/KernelSU drivers/kernelsu
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s stable && mv KernelSU-Next KernelSU && rm -f drivers/kernelsu && ln -sf ../KernelSU drivers/kernelsu
+          
           
         
           echo "✔ KSU installed successfully"
