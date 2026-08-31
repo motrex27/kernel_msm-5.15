@@ -180,7 +180,7 @@ jobs:
           rm -rf ./KernelSU ./drivers/kernelsu
           
           echo "📦 Installing Wild-KSU..."
-          curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+          rm -rf ./KernelSU ./KernelSU-Next ./drivers/kernelsu ; curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s dev-susfs && ln -sf KernelSU-Next KernelSU
           
           # Add Wild-KSU and SUSFS configs
           CONFIG_FILE="arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
@@ -262,7 +262,7 @@ jobs:
           # Create banner
           cat > AnyKernel3/banner << 'EOF'
           ╔═════════════════════════════════════════════════════╗
-          ║                                                     ║
+          ║                                                          ║
           ║          ██╗   ██╗ █████╗ ███████╗██╗  ██╗          ║
           ║          ╚██╗ ██╔╝██╔══██╗██╔════╝██║ ██╔╝          ║
           ║           ╚████╔╝ ███████║███████╗█████╔╝           ║
@@ -271,7 +271,7 @@ jobs:
           ║             ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝          ║
           ║                                                     ║
           ║               Yet Another Stock Kernel              ║
-          ║                   by @belowzeroiq                   ║
+          ║              by @belowzeroiq & @motrex27              ║
           ║                                                     ║
           ║              Powered by Github Actions              ║
           ║                                                     ║
@@ -329,7 +329,7 @@ jobs:
           • Kernel: \`Linux 5.15\`
           • Android: \`13-16\`
           • Base: \`GKI & CLO\`
-          • KSU: \`ReSukiSU\`
+          • KSU: \`KernelSU Next\`
           • SUSFS: \`Enabled (GKI A13-5.15)\`
           • LTO: \`Full\`
           • Optimization: \`-O2\`
@@ -360,7 +360,7 @@ jobs:
           • Kernel: \`Linux 5.15\`
           • Android: \`13-16\`
           • Base: \`GKI & CLO\`
-          • KSU: \`ReSukiSU\`
+          • KSU: \`KernelSU Next\`
           • SUSFS: \`Enabled (GKI A13-5.15)\`
           • LTO: \`Full\`
           • Optimization: \`-O2\`
