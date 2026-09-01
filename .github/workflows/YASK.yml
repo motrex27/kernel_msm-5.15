@@ -175,20 +175,60 @@ jobs:
         working-directory: ./${{ env.KERNEL_LOC_DIR }}/${{ env.KERNEL_NAME }}
         run: |
           set -e
-          
-          # Clean existing installations
-          rm -rf ./KernelSU ./drivers/kernelsu
-          
-          echo "📦 Installing Wild-KSU..."
-          rm -rf ./KernelSU ./KernelSU-Next ./drivers/kernelsu ; curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s dev-susfs && ln -sf KernelSU-Next KernelSU
-          
-          # Add Wild-KSU and SUSFS configs
-          CONFIG_FILE="arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
-          cat >> "$CONFIG_FILE" << 'EOF'
-          CONFIG_KSU=y
-          EOF
-          
-          echo "🎉 ReSukiSU fully integrated and verified!"
+            rm -rf ./KernelSU ./KernelSU-Next ./drivers/kernelsu
+            echo "📦 Installing KernelSU-Next (pershoot dev-susfs)..."
+            curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s dev-susfs && ln -sf KernelSU-Next KernelSU
+            echo "✔ KSU installed successfully"
+            echo "📦 Cloning SUSFS4KSU for kernel patches..."
+            git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android13-5.15
+            echo "☣️ Applying namespace.c Fake Patch (if applicable)"
+            if grep -q '^#include <trace/hooks/blk.h>$' fs/namespace.c; then
+              sed -i '/^#include <trace\/hooks\/blk.h>$/d' fs/namespace.c
+              NS_FAKE_PATCHED=1
+            else
+              echo "ℹ️ blk.h include not present — skipping fake patch"
+              NS_FAKE_PATCHED=0
+            fi
+            echo "☣️ Applying task_mmu.c Fake Patch (if applicable)"
+            if grep -q '^#include <trace/hooks/mm.h>$' fs/proc/task_mmu.c; then
+              sed -i '/^#include <trace\/hooks\/mm.h>$/d' fs/proc/task_mmu.c
+              MM_FAKE_PATCHED=1
+            else
+              echo "ℹ️ mm.h include not present — skipping fake patch"
+              MM_FAKE_PATCHED=0
+            fi
+            SUSFS_KERNEL_PATCH="susfs4ksu/kernel_patches/50_add_susfs_in_gki-android13-5.15.patch"
+            echo "🔧 Applying SUSFS kernel patch..."
+            patch -p1 < "$SUSFS_KERNEL_PATCH" || echo "⚠️ SUSFS patch failed — copying files manually"
+            mkdir -p fs
+            cp -f susfs4ksu/kernel_patches/fs/susfs.c fs/susfs.c
+            mkdir -p include/linux
+            cp -f susfs4ksu/kernel_patches/include/linux/susfs.h include/linux/susfs.h
+            [ -f susfs4ksu/kernel_patches/include/linux/susfs_def.h ] && cp -f susfs4ksu/kernel_patches/include/linux/susfs_def.h include/linux/susfs_def.h
+            for f in fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h; do [ -f "$f" ] && echo "✔ Found: $f" || echo "❌ Missing: $f"; done
+            rm -rf susfs4ksu
+            if [ ! -L "drivers/kernelsu" ]; then ln -sf ../KernelSU drivers/kernelsu; echo "✔ Created drivers/kernelsu symlink"; fi
+            CONFIG_FILE="arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
+            cat >> "$CONFIG_FILE" << 'EOF'
+            CONFIG_KSU=y
+            CONFIG_KSU_SUSFS=y
+            CONFIG_KSU_SUSFS_SUS_PATH=y
+            CONFIG_KSU_SUSFS_SUS_MOUNT=y
+            CONFIG_KSU_SUSFS_SUS_KSTAT=y
+            CONFIG_KSU_SUSFS_SPOOF_UNAME=y
+            CONFIG_KSU_SUSFS_ENABLE_LOG=y
+            CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
+            CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
+            CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+            CONFIG_KSU_SUSFS_SUS_MAP=y
+            EOF
+            if [ "$NS_FAKE_PATCHED" = "1" ] && ! grep -q 'trace/hooks/blk.h' fs/namespace.c; then
+              grep -q '^#include "internal.h"$' fs/namespace.c && sed -i '/^#include "internal.h"$/a #include <trace/hooks/blk.h>' fs/namespace.c && echo "✔ Restored blk.h include"
+            fi
+            if [ "$MM_FAKE_PATCHED" = "1" ] && ! grep -q 'trace/hooks/mm.h' fs/proc/task_mmu.c; then
+              grep -q '^#include <linux/pkeys.h>$' fs/proc/task_mmu.c && sed -i '/^#include <linux\/pkeys.h>$/a #include <trace/hooks/mm.h>' fs/proc/task_mmu.c && echo "✔ Restored mm.h include"
+            fi
+            echo "🎉 KernelSU-Next (pershoot dev-susfs) installed and SUSFS fully integrated!"
 
       - name: "⚙️ Setup basic configs"
         working-directory: ${{ env.KERNEL_LOC_DIR }}/${{ env.KERNEL_NAME }}
