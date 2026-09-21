@@ -376,7 +376,7 @@ jobs:
 
           echo "📦 Installing KSU..."
           
-          rm -rf ./KernelSU ./KernelSU-Next ./drivers/kernelsu ; curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev-susfs/kernel/setup.sh" | bash -s dev-susfs && ln -sf KernelSU-Next KernelSU
+          rm -rf ./KernelSU ./KernelSU-Next ./drivers/kernelsu ; curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash - && ln -sf KernelSU-Next KernelSU
            
           
           
