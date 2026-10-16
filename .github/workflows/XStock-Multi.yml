@@ -563,28 +563,28 @@ jobs:
           ║: ##:. ##::'##::: ##:::: ##:::: ##:::: ##: ##::: ##: ##:. ##::║
           ║##:::. ##:. ######::::: ##::::. #######::. ######:: ##::. ##::║
           ║..:::::..:::......::::::..::::::.......::::......:::..::::..::║
-          ║                                                     ║
-          ║                     XStock Kernel                   ║
-          ║                   by @yougotme101                   ║
-          ║                                                     ║
-          ║              Powered by Github Actions              ║
-          ║                                                     ║
+          ║                                                              ║
+          ║                     XStock Kernel                            ║
+          ║              by @yougotme101 & @motrex27                     ║
+          ║                                                              ║
+          ║               Powered by Github Actions                      ║
+          ║                                                              ║
           ╠═════════════════════════════════════════════════════╣
-          ║                                                     ║
-          ║     Features:                                       ║
-          ║     • Full LTO + -O2 Optimization                   ║
-          ║     • Extra TCP Congestion                          ║
-          ║     • AOSP clang-r614150                            ║
-          ║     • Droidspaces Support                           ║
-          ║     • Baseband-guard v1 Support                     ║
-          ║     • Vanilla & BakaSU (Multi Manager Support).     ║
-          ║     • Integrated with SUSFS (GKI A13-5.15)          ║
-          ║     • Metamodule (Magic-Mount or Mountify) Support  ║
-          ║                                                     ║
-          ║     Please ensure:                                  ║
-          ║     • Your device is compatible                     ║
-          ║     • You have a backup of your current kernel      ║
-          ║                                                     ║
+          ║                                                              ║
+          ║     Features:                                                ║
+          ║     • Full LTO + -O2 Optimization                            ║
+          ║     • Extra TCP Congestion                                   ║
+          ║     • AOSP clang-r614150                                     ║
+          ║     • Droidspaces Support                                    ║
+          ║     • Baseband-guard v1 Support                              ║
+          ║     • Vanilla & KernelSU Next                                ║
+          ║     • Integrated with SUSFS (GKI A13-5.15)                   ║
+          ║     • Metamodule (Magic-Mount or Mountify) Support           ║
+          ║                                                              ║
+          ║     Please ensure:                                           ║
+          ║     • Your device is compatible                              ║
+          ║     • You have a backup of your current kernel               ║
+          ║                                                              ║
           ╚═════════════════════════════════════════════════════╝
           Installing XStock Kernel...
           EOF
@@ -618,7 +618,7 @@ jobs:
           • Kernel: \`Linux 5.15\`
           • Android: \`13-17\`
           • Base: \`GKI & CLO\`
-          • KSU: \`BakaSU\`
+          • KSU: \`KernelSU Next\`
           • SUSFS: \`Enabled (GKI A13-5.15)\`
           • LTO: \`Full\`
           • Optimization: \`-O2\`
@@ -632,13 +632,10 @@ jobs:
           • Redmi 15/Poco M7 (untested)
 
           📱 *Supported Manager:*
-          • KSU by tiann
-          • MKSU
-          • Rissu-KSU
-          • KowSU
-          • BakaSU (Main Root Manager)
-          • SukiSU-Ultra
+          • KernelSU Next
 
+  
+          
           🕐 *Build Date:* $(date '+%Y-%m-%d %H:%M:%S UTC')
           📦 *Package:* \`${{ env.ZIP_NAME }}\`
 
@@ -659,7 +656,7 @@ jobs:
           • Kernel: \`Linux 5.15\`
           • Android: \`13-17\`
           • Base: \`GKI & CLO\`
-          • KSU: \`BakaSU\`
+          • KSU: \`KernelSU Next\`
           • SUSFS: \`Enabled (GKI A13-5.15)\`
           • LTO: \`Full\`
           • Optimization: \`-O2\`
