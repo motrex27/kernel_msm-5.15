@@ -750,7 +750,7 @@ jobs:
           
           echo "🎉 FinaSU setup complete!"
 
-      - name: "🔧 Setup KSU-Next(pershoot) + Multi Manager with SUSFS"
+      - name: "🔧 Setup KSU-Next(Official)"
         if: matrix.variant == 'ksu' && github.event.inputs.ksuVariant == 'KSU-Next'
         working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
         run: |
