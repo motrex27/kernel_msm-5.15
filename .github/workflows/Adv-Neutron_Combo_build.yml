@@ -41,11 +41,12 @@ on:
         description: "KSU implementation (if KSU enabled)"
         required: true
         type: choice
-        default: "ReSukiSU"
+        default: "BakaSU"
         options:
           - "KowSU"
           - "SukiSU"
           - "BakaSU"
+          - "FinaSU"
           - "KSU-Next"
       susfsSupport:
         description: "Add SUSFS Implementation (if KSU Enabled)"
@@ -77,6 +78,16 @@ on:
           - "600Hz"
           - "750Hz"
           - "1000Hz"
+      kProfilesMode:
+        description: "Set Kprofiles Mode, only for kaze & zepharo branch (Battery = 1, Balanced = 2, Performance = 3)"
+        required: false
+        type: choice
+        default: "default"
+        options:
+          - "default"
+          - "1"
+          - "2"
+          - "3"
       extraGovernor:
         description: "Add Extra Governor Options"
         required: false
@@ -141,49 +152,6 @@ jobs:
         run: |
           git clone --recursive --branch ${{ github.event.inputs.kernelBranch }} \
             ${{ github.event.inputs.kernelSourceURL }} ${{ env.kernelName }} --depth=1
-
-      - name: "📥 Initialize repo & AOSP clang-r584948b"
-        if: github.event.inputs.buildToolchains == 'clang-r584948b'
-        working-directory: ${{ env.WORK_DIR}}
-        run: |
-         repo init -u https://android.googlesource.com/kernel/manifest -b common-android13-5.15-lts --depth=1
-         repo sync --optimized-fetch --prune --no-clone-bundle --no-tags -j$(nproc --all)
-    
-         rm -rf .repo
-         rm -rf common
-
-         # Download updated Clang r584948 from Android Git repository
-         aria2c -x 16 -s 16 -o prebuilts/clang/host/linux-x86/clang-r584948b.tar.gz "https://github.com/topnotchfreaks/clang/releases/download/v1.0.0/clang-r584948b.tar.gz"
-    
-         mkdir -p prebuilts/clang/host/linux-x86/clang-r584948b
-         tar -xzf prebuilts/clang/host/linux-x86/clang-r584948b.tar.gz -C prebuilts/clang/host/linux-x86/clang-r584948b
-         rm -rf prebuilts/clang/host/linux-x86/clang-r584948b.tar.gz
-
-         # Clean up old Clang versions
-         rm -rf prebuilts/clang/host/linux-x86/clang-3289846
-         rm -rf prebuilts/clang/host/linux-x86/clang-r450784e
-         rm -rf prebuilts/clang/host/linux-x86/clang-r547379
-         rm -rf prebuilts/clang/host/linux-x86/clang-stable
-         
-         sed -i \
-          -e 's/^BRANCH=.*/BRANCH=android13-5.15/' \
-          -e 's/^CLANG_VERSION=.*/CLANG_VERSION=r584948b/' \
-         ${{ env.kernelDir }}/${{ env.kernelName }}/build.config.constants
-    
-         sed -i '/^DEFCONFIG=gki_defconfig/d' ${{ env.kernelDir }}/${{ env.kernelName }}/build.config.gki
-         sed -i '$a\DEFCONFIG=${{ env.DEFCONFIG_NAME }}' ${{ env.kernelDir }}/${{ env.kernelName }}/build.config.gki
-         sed -i '/^POST_DEFCONFIG_CMDS="check_defconfig"/d' ${{ env.kernelDir }}/${{ env.kernelName }}/build.config.gki
-
-         sed -i \
-          -e '/^KMI_SYMBOL_LIST_STRICT_MODE=/d' \
-          -e '/^TRIM_NONLISTED_KMI=/d' \
-          -e '/^KMI_ENFORCED=/d' \
-          -e '$a\KMI_SYMBOL_LIST_STRICT_MODE=0' \
-          -e '$a\TRIM_NONLISTED_KMI=0' \
-          -e '$a\KMI_ENFORCED=0' \
-          -e '/^MODULES_ORDER=/d' \
-          -e '/^MODULES_LIST=/d' \
-         ${{ env.kernelDir }}/${{ env.kernelName }}/build.config.gki.aarch64
 
       - name: "📥 Initialize repo & AOSP clang-r614150"
         if: github.event.inputs.buildToolchains == 'clang-r614150'
@@ -449,6 +417,24 @@ jobs:
               ;;
           esac
 
+          case "${{ github.event.inputs.kProfilesMode }}" in
+            default)
+              # nothing to add here (keep it default)
+              ;;
+              1)
+              sed -i '/^CONFIG_KP_DEFAULT_MODE=/d' "$CONFIG_FILE"
+              echo "CONFIG_KP_DEFAULT_MODE=1" >> "$CONFIG_FILE"
+              ;;
+              2)
+              sed -i '/^CONFIG_KP_DEFAULT_MODE=/d' "$CONFIG_FILE"
+              echo "CONFIG_KP_DEFAULT_MODE=2" >> "$CONFIG_FILE"
+              ;;
+              3)
+              sed -i '/^CONFIG_KP_DEFAULT_MODE=/d' "$CONFIG_FILE"
+              echo "CONFIG_KP_DEFAULT_MODE=3" >> "$CONFIG_FILE"
+              ;;
+          esac
+
           # Extra Addon configs
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> "$CONFIG_FILE"
           echo "CONFIG_TCP_CONG_BIC=n" >> "$CONFIG_FILE"
@@ -698,7 +684,7 @@ jobs:
           rm -rf ./KernelSU ./drivers/kernelsu
 
           echo "📦 Installing BakaSU..."
-          curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash
+          curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash -s sync-susfs
           
           CONFIG_FILE="arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
           cat >> "$CONFIG_FILE" << 'EOF'
@@ -706,6 +692,22 @@ jobs:
           EOF
           
           echo "🎉 BakaSU setup complete!"
+
+      - name: "🔧 Setup FinaSU"
+        if: matrix.variant == 'ksu' && github.event.inputs.ksuVariant == 'FinaSU'
+        working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
+        run: |
+          rm -rf ./KernelSU ./drivers/kernelsu
+
+          echo "📦 Installing FinaSU..."
+          curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash
+          
+          CONFIG_FILE="arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
+          cat >> "$CONFIG_FILE" << 'EOF'
+          CONFIG_KSU=y
+          EOF
+          
+          echo "🎉 FinaSU setup complete!"
 
       - name: "🔧 Setup KSU-Next(pershoot) + Multi Manager with SUSFS"
         if: matrix.variant == 'ksu' && github.event.inputs.ksuVariant == 'KSU-Next'
