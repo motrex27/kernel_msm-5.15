@@ -40,6 +40,10 @@ Get build results sent to Telegram:
 - **@NVG-064** – Contributor
 - **@ShirkNeko** – SUSFS integration
 - **@thewildjames** – Wild-KSU
+- **@belowzeroiq** – Guides, Mentoring and Resources
+- **@kusonekoworld-max** – SUSFS Script, Reflex + Vorpal implementation
+- **@RapliVx** – KSUN Multi Manager Script
+
 
 ---
 
