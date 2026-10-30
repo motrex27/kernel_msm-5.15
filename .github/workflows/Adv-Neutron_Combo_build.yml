@@ -989,9 +989,7 @@ jobs:
           #  echo "ℹ️ Skipping mm.h restore (not fake-patched or already present)"
           # fi
           
-          echo "✅ KSU configs added"
-          
-          echo "🎉 SUSFS Integration setup complete!"
+          echo "🎉 KSU Config + SUSFS Integration setup complete!"
 
       - name: "🔧 Fix compilation errors in FUSE"
         if: github.event.inputs.kernelBranch == 'codelinaro'
