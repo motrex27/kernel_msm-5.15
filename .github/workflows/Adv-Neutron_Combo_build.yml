@@ -812,7 +812,7 @@ jobs:
           EOF
           
           echo "🎉 KSU-Next(pershoot) setup complete!"
-          
+
       - name: "🚀 Inject SUSFS Integration"
         if: matrix.variant == 'ksu' && github.event.inputs.susfsSupport == 'Enabled'
         working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
@@ -881,38 +881,36 @@ jobs:
           fi
           rm -f "$SUSFS_KERNEL_PATCH"
 
-          echo "🔁 SUSFS SELinux hooks: fake_state -> backup_sepolicy"
-          if ! grep -rq 'backup_sepolicy' drivers/kernelsu/; then
-            echo "❌ KernelSU side has no backup_sepolicy — this conversion doesn't fit this KSU version"
-            exit 1
+          grep -rn "_with_policy\|SUSFS_EXPORT\|my_write_context\|HAS_SUSFS_FEATURE_SELINUX_HIDE" drivers/kernelsu/ | head -20
+
+          HIDE=$(find -L drivers/kernelsu -name selinux_hide.c 2>/dev/null | head -1)
+          if [ -n "$HIDE" ] && ! grep -q fake_state "$HIDE"; then
+            echo "🔁 New selinux_hide model: fake_state -> backup_sepolicy"
+
+            FS=security/selinux/selinuxfs.c
+            HK=security/selinux/hooks.c
+            E1='extern struct selinux_policy *backup_sepolicy;'
+            E2='extern int security_context_to_sid_with_policy(struct selinux_policy *policy, const char *scontext, u32 scontext_len, u32 *sid, u32 def_sid, gfp_t gfp_flags, u32 *orig_sid_p, int *orig_rc_p);'
+            E3='extern int security_sid_to_context_with_policy(struct selinux_policy *policy, u32 sid, char **scontext, u32 *scontext_len);'
+            E4='extern void security_compute_av_user_with_policy(struct selinux_policy *policy, u32 ssid, u32 tsid, u16 tclass, struct av_decision *avd);'
+
+            sed -i \
+              -e "s|^extern struct selinux_state fake_state;|${E1}\n${E2}\n${E3}\n${E4}|" \
+              ... (your existing -e lines, unchanged) ... \
+              "$FS"
+
+            sed -i \
+              -e "s|^extern struct selinux_state fake_state;|${E1}\n${E2}|" \
+              ... (your existing -e line, unchanged) ... \
+              "$HK"
+
+            if grep -n 'fake_state' "$FS" "$HK"; then
+              echo "❌ fake_state references remain"; exit 1
+            fi
+            echo "✅ fake_state converted"
+          else
+            echo "ℹ️ Old selinux_hide model (or none): keeping fake_state as-is"
           fi
-          grep -rn 'security_context_to_sid_with_policy' drivers/kernelsu/ | head -5 || true
-
-          FS=security/selinux/selinuxfs.c
-          HK=security/selinux/hooks.c
-          E1='extern struct selinux_policy *backup_sepolicy;'
-          E2='extern int security_context_to_sid_with_policy(struct selinux_policy *policy, const char *scontext, u32 scontext_len, u32 *sid, u32 def_sid, gfp_t gfp_flags, u32 *orig_sid_p, int *orig_rc_p);'
-          E3='extern int security_sid_to_context_with_policy(struct selinux_policy *policy, u32 sid, char **scontext, u32 *scontext_len);'
-          E4='extern void security_compute_av_user_with_policy(struct selinux_policy *policy, u32 ssid, u32 tsid, u16 tclass, struct av_decision *avd);'
-
-          sed -i \
-            -e "s|^extern struct selinux_state fake_state;|${E1}\n${E2}\n${E3}\n${E4}|" \
-            -e 's|security_context_to_sid(&fake_state, buf, size, &sid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, buf, size, \&sid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
-            -e 's|security_sid_to_context(&fake_state, sid, &canon, &len)|security_sid_to_context_with_policy(backup_sepolicy, sid, \&canon, \&len)|' \
-            -e 's|security_context_str_to_sid(&fake_state, scon, &ssid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, scon, strlen(scon), \&ssid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
-            -e 's|security_context_str_to_sid(&fake_state, tcon, &tsid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, tcon, strlen(tcon), \&tsid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
-            -e 's|security_compute_av_user(&fake_state, ssid, tsid, tclass, &avd)|security_compute_av_user_with_policy(backup_sepolicy, ssid, tsid, tclass, \&avd)|' \
-            "$FS"
-
-          sed -i \
-            -e "s|^extern struct selinux_state fake_state;|${E1}\n${E2}|" \
-            -e 's|security_context_to_sid(&fake_state, value, size, &tmp_sid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, value, size, \&tmp_sid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
-            "$HK"
-
-          if grep -n 'fake_state' "$FS" "$HK"; then
-            echo "❌ fake_state references remain"; exit 1
-          fi
-          echo "✅ fake_state converted"
 
           echo "🔧 Applying SUSFS -> KernelSU patch..."
           KSU_PATCH="susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
