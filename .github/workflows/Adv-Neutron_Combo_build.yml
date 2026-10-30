@@ -54,6 +54,7 @@ on:
           - "BakaSU"
           - "MamboSU"
           - "KSU-Next"
+          - "KSU-Next(SUSFS)"
       susfsSupport:
         description: "Add SUSFS Implementation (if KSU Enabled)"
         required: true
@@ -764,8 +765,32 @@ jobs:
           
           echo "🎉 MamboSU setup complete!"
 
-      - name: "🔧 Setup KSU-Next(pershoot) + Multi Manager with SUSFS"
+      - name: "🔧 Setup KSU-Next(pershoot) + Multi Manager without SUSFS"
         if: matrix.variant == 'ksu' && github.event.inputs.ksuVariant == 'KSU-Next'
+        working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
+        run: |
+          rm -rf ./KernelSU ./drivers/kernelsu
+
+          echo "📦 Installing KSU..."
+          echo "Applying KernelSU-Next (dev)..."
+          curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/dev/kernel/setup.sh" | bash -s dev
+          echo "Applying All Managers Patch..."
+          curl -LSs "https://raw.githubusercontent.com/RapliVx/kernel_builder/refs/heads/main/patch/ksun-add-more-managers-support.patch" | patch -p1 -d KernelSU-Next
+          if [ ! -L "drivers/kernelsu" ]; then
+             ln -sf ../KernelSU-Next drivers/kernelsu
+          fi
+          
+          echo "✔ KSU installed successfully"
+
+          CONFIG_FILE="arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
+          cat >> "$CONFIG_FILE" << 'EOF'
+          CONFIG_KSU=y
+          EOF
+          
+          echo "🎉 KSU-Next(pershoot) setup complete!"
+
+      - name: "🔧 Setup KSU-Next(pershoot) + Multi Manager with SUSFS"
+        if: matrix.variant == 'ksu' && github.event.inputs.ksuVariant == 'KSU-Next(SUSFS)'
         working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
         run: |
           rm -rf ./KernelSU ./drivers/kernelsu
