@@ -200,7 +200,9 @@ jobs:
           echo "CONFIG_TCP_CONG_WESTWOOD=y" >> "$CONFIG_FILE"
           echo "CONFIG_TCP_CONG_HTCP=n" >> "$CONFIG_FILE"
           echo "CONFIG_TCP_CONG_BBR=y" >> "$CONFIG_FILE"
-          echo "CONFIG_DEFAULT_BBR=y" >> "$CONFIG_FILE"
+          echo "CONFIG_TCP_CONG_BBR3=y" >> "$CONFIG_FILE"
+          echo "CONFIG_DEFAULT_BBR3=y" >> "$CONFIG_FILE"
+          echo 'CONFIG_DEFAULT_TCP_CONG="bbr3"' >> "$CONFIG_FILE"
           echo "CONFIG_OVERLAY_FS=y" >> "$CONFIG_FILE"
           echo "CONFIG_TMPFS_XATTR=y" >> "$CONFIG_FILE"
           echo "CONFIG_TMPFS_POSIX_ACL=y" >> "$CONFIG_FILE"
@@ -220,6 +222,30 @@ jobs:
           echo "CONFIG_CRYPTO_LZ4=y" >> "$CONFIG_FILE"
           echo "CONFIG_KERNEL_LZ4=y" >> "$CONFIG_FILE"
           echo "ZRAM_DEF_COMP_LZ4=y" >> "$CONFIG_FILE"
+
+      - name: "🌐 Apply BBRv3 + PLB"
+        working-directory: ${{ env.KERNEL_LOC_DIR }}/${{ env.KERNEL_NAME }}
+        run: |
+          set -euo pipefail
+          PATCH_URL="https://github.com/topnotchfreaks/kernel_msm-5.15/commit/7bc9793d909f52f4a6cd45dd1381b2f200c18a7c.patch"
+
+          curl -sfL -o bbr3.patch "$PATCH_URL" || { echo "❌ Failed to download BBRv3 patch"; exit 1; }
+          head -n 5 bbr3.patch
+          grep -q "tcp_bbr3.c" bbr3.patch || { echo "❌ Not the expected patch"; exit 1; }
+
+          # Skip the defconfig hunk: the commit targets unified_defconfig, which doesn't exist in GKI/CLO trees
+          EXCL="--exclude=arch/arm64/configs/*"
+
+          git apply --check $EXCL --whitespace=nowarn bbr3.patch \
+            || { echo "❌ BBRv3 does not apply cleanly to ${{ matrix.kernel.name }}"; git apply --check $EXCL bbr3.patch 2>&1 | head -50; exit 1; }
+          git apply -v $EXCL --whitespace=nowarn bbr3.patch
+          rm -f bbr3.patch
+
+          for f in net/ipv4/tcp_bbr3.c net/ipv4/tcp_plb.c; do
+            [ -f "$f" ] || { echo "❌ Missing $f"; exit 1; }
+          done
+          grep -q "TCP_CONG_BBR3" net/ipv4/Kconfig || { echo "❌ BBR3 Kconfig missing"; exit 1; }
+          echo "✅ BBRv3 + PLB applied"
 
       - name: '⚙️ Inject Reflex Governor'
         shell: bash
