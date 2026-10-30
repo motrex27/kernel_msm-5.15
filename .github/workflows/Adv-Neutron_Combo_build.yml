@@ -885,7 +885,14 @@ jobs:
 
           HIDE=$(find -L drivers/kernelsu -name selinux_hide.c 2>/dev/null | head -1)
           if [ -n "$HIDE" ] && ! grep -q fake_state "$HIDE"; then
-            echo "🔁 New selinux_hide model: fake_state -> backup_sepolicy"
+            echo "🔁 New selinux_hide model: exporting helpers + fake_state -> backup_sepolicy"
+
+            # declares the helpers static; export them so the kernel side can link
+            sed -i -E 's/^static (int|void) (security_context_to_sid_with_policy|security_sid_to_context_with_policy|security_compute_av_user_with_policy)\(/\1 \2(/' "$HIDE"
+            grep -n '^[a-z].*_with_policy(struct' "$HIDE"
+            if grep -n '^static .*_with_policy(' "$HIDE"; then
+              echo "❌ helpers still static"; exit 1
+            fi
 
             FS=security/selinux/selinuxfs.c
             HK=security/selinux/hooks.c
@@ -896,12 +903,16 @@ jobs:
 
             sed -i \
               -e "s|^extern struct selinux_state fake_state;|${E1}\n${E2}\n${E3}\n${E4}|" \
-              ... (your existing -e lines, unchanged) ... \
+              -e 's|security_context_to_sid(&fake_state, buf, size, &sid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, buf, size, \&sid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
+              -e 's|security_sid_to_context(&fake_state, sid, &canon, &len)|security_sid_to_context_with_policy(backup_sepolicy, sid, \&canon, \&len)|' \
+              -e 's|security_context_str_to_sid(&fake_state, scon, &ssid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, scon, strlen(scon), \&ssid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
+              -e 's|security_context_str_to_sid(&fake_state, tcon, &tsid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, tcon, strlen(tcon), \&tsid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
+              -e 's|security_compute_av_user(&fake_state, ssid, tsid, tclass, &avd)|security_compute_av_user_with_policy(backup_sepolicy, ssid, tsid, tclass, \&avd)|' \
               "$FS"
 
             sed -i \
               -e "s|^extern struct selinux_state fake_state;|${E1}\n${E2}|" \
-              ... (your existing -e line, unchanged) ... \
+              -e 's|security_context_to_sid(&fake_state, value, size, &tmp_sid, GFP_KERNEL)|security_context_to_sid_with_policy(backup_sepolicy, value, size, \&tmp_sid, SECSID_NULL, GFP_KERNEL, NULL, NULL)|' \
               "$HK"
 
             if grep -n 'fake_state' "$FS" "$HK"; then
@@ -909,7 +920,7 @@ jobs:
             fi
             echo "✅ fake_state converted"
           else
-            echo "ℹ️ Old selinux_hide model (or none): keeping fake_state as-is"
+            echo "ℹ️ Old selinux_hide model: keeping fake_state as-is"
           fi
 
           echo "🔧 Applying SUSFS -> KernelSU patch..."
