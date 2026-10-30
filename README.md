@@ -44,6 +44,7 @@ Get build results sent to Telegram:
 - **@kusonekoworld-max** – SUSFS Script, Reflex + Vorpal implementation
 - **@RapliVx** – KSUN Multi Manager Script
 - **@NotPichayut** – Kernel Version Spoof Script
+- **@Ling_Luo & @init_user0** – SUSFS Script and patches
 
 
 ---
