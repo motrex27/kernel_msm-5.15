@@ -839,11 +839,13 @@ jobs:
           #  echo "ℹ️ mm.h include not present in fs/proc/task_mmu.c — skipping fake patch"
           #  MM_FAKE_PATCHED=0
           # fi
+
+          SUSFS_KERNEL_PATCH="$PWD/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android13-5.15.patch"
           
-          SUSFS_KERNEL_PATCH="$PWD/50_add_susfs_in_gki-android13-5.15.patch"
-          curl -fsSL -o "$SUSFS_KERNEL_PATCH" \
-            "https://raw.githubusercontent.com/nullptr-t-oss/kernel_kit/main/kernel_patches/salami-oos14/susfs/50_add_susfs_in_gki-android13-5.15.patch" \
-            || { echo "❌ Failed to download SUSFS patch"; exit 1; }
+          # SUSFS_KERNEL_PATCH="$PWD/50_add_susfs_in_gki-android13-5.15.patch"
+          # curl -fsSL -o "$SUSFS_KERNEL_PATCH" \
+          #  "https://raw.githubusercontent.com/nullptr-t-oss/kernel_kit/main/kernel_patches/salami-oos14/susfs/50_add_susfs_in_gki-android13-5.15.patch" \
+          #  || { echo "❌ Failed to download SUSFS patch"; exit 1; }
 
           echo "🔧 Applying SUSFS kernel patch..."
           if patch -p1 < "$SUSFS_KERNEL_PATCH"; then
