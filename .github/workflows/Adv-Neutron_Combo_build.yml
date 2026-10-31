@@ -886,11 +886,21 @@ jobs:
             echo "🔁 New selinux_hide model: exporting helpers + fake_state -> backup_sepolicy"
 
             # declares the helpers static; export them so the kernel side can link
-            sed -i -E 's/^static (int|void) (security_context_to_sid_with_policy|security_sid_to_context_with_policy|security_compute_av_user_with_policy)\(/\1 \2(/' "$HIDE"
-            grep -n '^[a-z].*_with_policy(struct' "$HIDE"
-            if grep -n '^static .*_with_policy(' "$HIDE"; then
-              echo "❌ helpers still static"; exit 1
-            fi
+            # BakaSU declares the helpers plain `static`; KSU-Next(SUSFS) already exports them
+            # through a wrapper macro. Strip plain `static` from the exact names only
+            # (never the __security_* internals).
+            sed -i -E 's/^static[[:space:]]+(int|void)[[:space:]]+(security_context_to_sid_with_policy|security_sid_to_context_with_policy|security_compute_av_user_with_policy)\(/\1 \2(/' "$HIDE"
+
+            for fn in security_context_to_sid_with_policy security_sid_to_context_with_policy security_compute_av_user_with_policy; do
+              if grep -nE "^static[[:space:]]+(int|void)[[:space:]]+${fn}\(" "$HIDE"; then
+                echo "❌ $fn is still plain static"; exit 1
+              fi
+              if ! grep -qE "(^|[^_A-Za-z0-9])${fn}\(" "$HIDE"; then
+                echo "::warning::$fn not defined in $HIDE (driver may use its own my_write_* hooks)"
+              else
+                echo "✔ $fn exported"
+              fi
+            done
 
             FS=security/selinux/selinuxfs.c
             HK=security/selinux/hooks.c
